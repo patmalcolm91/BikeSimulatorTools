@@ -11,3 +11,7 @@ This is useful because the ego vehicle in the bike simulator is not detected by 
 Contains classes and functions to easily send and receive values via UDP.
 Any value or list of values which can be packed by Python's struct module can be sent.
 For information on packing format strings, see https://docs.python.org/3/library/struct.html#format-characters
+
+### DynamicFlows
+Contains classes and functions for creating and modifying flows in a SUMO simulation dynamically.
+The class also allows a probabilistic mix of different vehicle types.
