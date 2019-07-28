@@ -55,7 +55,7 @@ class Trigger:
         Evaluates whether the trigger area was entered or exited since the last call to this function.
         :param point: current coordinate of the ego vehicle
         :return: ENTRY if vehicle just entered, EXIT if vehicle just exited, NO_CHANGE if no change since last call
-        :type: tuple(float)
+        :type: (float, float)
         """
         old_state = self.state
         self.state = shapely.geometry.Point(point).within(self.shape)
@@ -69,7 +69,7 @@ class Trigger:
         Simplified version of check() which only evaluates whether the trigger area was entered.
         :param point: current coordinate of the ego vehicle
         :return: True if vehicle just entered, else False
-        :type point: tuple[float]
+        :type point: (float, float)
         """
         chk = self.check(point)
         return chk == ENTRY
@@ -79,7 +79,7 @@ class Trigger:
         Simplified version of check() which only evaluates whether the trigger area was exited.
         :param point: current coordinate of the ego vehicle
         :return: True if vehicle just exited, else False
-        :type point: tuple[float]
+        :type point: (float, float)
         """
         chk = self.check(point)
         return chk == EXIT
@@ -111,7 +111,7 @@ def check_triggers(triggers, point):
     :param point: ego vehicle coordinate to check against the triggers
     :return: dict of trigger IDs and events
     :type triggers: list[Trigger]
-    :type point: tuple(float)
+    :type point: (float, float)
     """
     return {trigger.id: trigger.check(point) for trigger in triggers}
 

@@ -65,8 +65,8 @@ class TriggeredFlows:
 
     def run(self, point):
         """
-        Checks Triggers against the specified point coordinates and toggles the corresponding DynamicFlow objects.
-        :param point: coordinate of ego vehicle to check against Triggers or None to only run the flows
+        Checks Triggers against the specified point coordinates and toggles and runs the corresponding DynamicFlows.
+        :param point: coordinate of ego vehicle to check against Triggers or None to skip trigger checks
         :return: None
         :type point: (float, float)
         """
