@@ -58,6 +58,6 @@ class DynamicFlow:
             print(pdf)
             pdf /= sum(pdf)
             vType = np.random.choice(vTypes, p=pdf)
-            traci.vehicle.add("name."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
+            traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
                               arrivalSpeed=self.arrivalSpeed)
             self.count += 1
