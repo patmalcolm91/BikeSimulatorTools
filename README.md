@@ -15,3 +15,10 @@ For information on packing format strings, see https://docs.python.org/3/library
 ### DynamicFlows
 Contains classes and functions for creating and modifying flows in a SUMO simulation dynamically.
 The class also allows a probabilistic mix of different vehicle types.
+
+### SimConfig
+Module for creating higher-level configurations to manage interactions between other modules in this package.
+
+#### TriggeredFlows
+Class for connecting Trigger state changes to DynamicFlow enable and disable events.
+Checks all triggers and enables/disables flows when the corresponding Trigger object registers the specified event.
