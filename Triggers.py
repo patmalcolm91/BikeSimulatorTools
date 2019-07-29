@@ -7,6 +7,7 @@ Author: Patrick Malcolm
 
 import xml.etree.ElementTree as ET
 import shapely.geometry
+import traci
 
 
 # Constants ============================================================================================================
@@ -44,7 +45,9 @@ class Trigger:
         else:
             coords = points
         self.shape = shapely.geometry.Polygon(coords)
-        self.state = False
+        self.state = False  # The trigger state as of the last check
+        self.last_check = -1  # The simulation time at which the last check was performed
+        self.last_event = NO_CHANGE  # The event triggered when the last check was performed
 
     def __repr__(self):
         point_string = " ".join([str(p[0]) + "," + str(p[1]) for p in self.shape.boundary.coords])
@@ -53,16 +56,21 @@ class Trigger:
     def check(self, point):
         """
         Evaluates whether the trigger area was entered or exited since the last call to this function.
+        This function is safe against multiple calls per simulation timestep.
         :param point: current coordinate of the ego vehicle
         :return: ENTRY if vehicle just entered, EXIT if vehicle just exited, NO_CHANGE if no change since last call
         :type: (float, float)
         """
-        old_state = self.state
-        self.state = shapely.geometry.Point(point).within(self.shape)
-        if self.state != old_state:
-            return ENTRY if self.state is True else EXIT
-        else:
-            return NO_CHANGE
+        sim_time = traci.simulation.getTime()
+        if sim_time > self.last_check:
+            old_state = self.state
+            self.state = shapely.geometry.Point(point).within(self.shape)
+            self.last_check = sim_time
+            if self.state != old_state:
+                self.last_event = ENTRY if self.state is True else EXIT
+            else:
+                self.last_event = NO_CHANGE
+        return self.last_event
 
     def check_entry(self, point):
         """
@@ -114,14 +122,3 @@ def check_triggers(triggers, point):
     :type point: (float, float)
     """
     return {trigger.id: trigger.check(point) for trigger in triggers}
-
-
-# Test Code ============================================================================================================
-
-if __name__ == "__main__":
-    print("Running test code...")
-    triggers = read_triggers_from_file("../triggers.xml")
-    print(check_triggers(triggers, (40, 112)))
-    print(check_triggers(triggers, (60, 112)))
-    print(check_triggers(triggers, (60, 112)))
-    print(check_triggers(triggers, (70, 112)))
