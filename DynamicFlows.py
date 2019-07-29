@@ -56,7 +56,6 @@ class DynamicFlow:
         if self.enabled and random.random() < p:
             vTypes = np.array(list(self.vehicleMix.keys()))
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
-            print(pdf)
             pdf /= sum(pdf)
             vType = np.random.choice(vTypes, p=pdf)
             traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
