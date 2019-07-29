@@ -52,7 +52,8 @@ class DynamicFlow:
 
     def run(self):
         """Processes the dynamic flow and inserts a vehicle if necessary. Should be run every simulation step."""
-        if self.enabled and random.random() < self.probability * traci.simulation.getDeltaT():
+        p = 1 - (1 - self.probability)**traci.simulation.getDeltaT()  # Get probability for sim step
+        if self.enabled and random.random() < p:
             vTypes = np.array(list(self.vehicleMix.keys()))
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
             print(pdf)
