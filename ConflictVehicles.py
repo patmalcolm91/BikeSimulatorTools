@@ -49,7 +49,6 @@ class ConflictVehicle:
         ego_eta = ego_dist / ego_speed
         conflict_eta = conflict_lane_length / conflict_lane_speed
         if not self.deployed and ego_eta <= conflict_eta:
-            print(ego_speed)
             traci.vehicle.add(self.name, self.routeID, typeID=self.typeID, departSpeed="max")
             self.deployed = True
 
