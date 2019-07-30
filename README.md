@@ -16,6 +16,11 @@ For information on packing format strings, see https://docs.python.org/3/library
 Contains classes and functions for creating and modifying flows in a SUMO simulation dynamically.
 The class also allows a probabilistic mix of different vehicle types.
 
+### ConflictVehicles
+Module for inserting a single vehicle timed to create a conflict with the ego vehicle at an intersection.
+The vehicle will be sent at a time which will bring it to the end of the first lane in its route (+/- an offset)
+when the ego vehicle is projected to reach a specified target point.
+
 ### SimConfig
 Module for creating higher-level configurations to manage interactions between other modules in this package.
 
