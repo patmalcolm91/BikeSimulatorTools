@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 
 
 class ConflictVehicle:
-    def __init__(self, name, typeID, routeID, ego_target, conflict_target_offset=0):
+    def __init__(self, name, typeID, routeID, ego_target, conflict_target_offset=0, release_point=20):
         """
         Initializes a ConflictVehicle object.
         :param name: ID of the vehicle to be inserted
@@ -21,11 +21,13 @@ class ConflictVehicle:
         :param routeID: route ID of the route of the vehicle to be inserted
         :param ego_target: coordinate of ego vehicle target point
         :param conflict_target_offset: offset (m) to apply to the conflict vehicle's end-of-first-lane target point
+        :param release_point: distance (m) from ego target after which conflict vehicle is no longer altered
         :type name: str
         :type typeID: str
         :type routeID: str
         :type ego_target: (float, float)
         :type conflict_target_offset: float
+        :type release_point: float
         """
         self.name = name
         self.typeID = typeID
@@ -33,6 +35,8 @@ class ConflictVehicle:
         self.ego_target = ego_target
         self.conflict_target_offset = conflict_target_offset
         self.deployed = False
+        self.done = False
+        self.release_point = release_point
 
     def check(self, ego_pos, ego_speed):
         """
@@ -47,15 +51,25 @@ class ConflictVehicle:
         conflict_lane_speed = traci.lane.getMaxSpeed(conflict_lane)
         ego_dist = np.linalg.norm(np.array(self.ego_target) - np.array(ego_pos))
         ego_eta = ego_dist / ego_speed
-        conflict_eta = conflict_lane_length / conflict_lane_speed
-        if not self.deployed and ego_eta <= conflict_eta:
+        conflict_eta_total = conflict_lane_length / conflict_lane_speed
+        if not self.deployed and ego_eta <= conflict_eta_total:
             traci.vehicle.add(self.name, self.routeID, typeID=self.typeID, departSpeed="max")
             self.deployed = True
+        if self.deployed and ego_dist < self.release_point:
+            self.done = True
+        if self.deployed and not self.done:
+            conflict_dist = conflict_lane_length - traci.vehicle.getLanePosition(self.name)
+            conflict_speed = traci.vehicle.getSpeed(self.name)
+            conflict_eta = conflict_dist / conflict_speed
+            if abs(conflict_eta - ego_eta) > 0.5:
+                new_conflict_speed = conflict_dist / ego_eta
+                traci.vehicle.slowDown(self.name, new_conflict_speed, 0)
 
     def reset(self):
         """Resets this object by removing the vehicle from the simulation and allowing re-deployment."""
         traci.vehicle.remove(self.name, tc.REMOVE_VAPORIZED)
         self.deployed = False
+        self.done = False
 
 
 def read_target_points_from_file(file, type_value="target"):
