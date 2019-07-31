@@ -45,6 +45,7 @@ class ConflictVehicle:
         :param ego_speed: speed of ego vehicle (m/s)
         :return: None
         """
+        # Calculate ego and conflict vehicles' ETAs
         conflict_edge = traci.route.getEdges(self.routeID)[0]
         conflict_lane = conflict_edge + "_0"
         conflict_lane_length = traci.lane.getLength(conflict_lane) + self.conflict_target_offset
@@ -52,11 +53,14 @@ class ConflictVehicle:
         ego_dist = np.linalg.norm(np.array(self.ego_target) - np.array(ego_pos))
         ego_eta = ego_dist / ego_speed
         conflict_eta_total = conflict_lane_length / conflict_lane_speed
+        # Check if the conflict vehicle should be deployed
         if not self.deployed and ego_eta <= conflict_eta_total:
             traci.vehicle.add(self.name, self.routeID, typeID=self.typeID, departSpeed="max")
             self.deployed = True
+        # Check if the ego vehicle has passed the release point
         if self.deployed and ego_dist < self.release_point:
             self.done = True
+        # If the conflict vehicle is en route but not past the release point, potentially update its speed
         if self.deployed and not self.done:
             conflict_dist = conflict_lane_length - traci.vehicle.getLanePosition(self.name)
             conflict_speed = traci.vehicle.getSpeed(self.name)
