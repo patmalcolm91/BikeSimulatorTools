@@ -53,6 +53,15 @@ class Trigger:
         point_string = " ".join([str(p[0]) + "," + str(p[1]) for p in self.shape.boundary.coords])
         return "Trigger('"+self.id + "', '" + point_string + "')"
 
+    def includes(self, point):
+        """
+        Checks whether the trigger area includes the specified point.
+        :param point: current coordinate of the ego vehicle
+        :return: True if point contained within trigger area, else False
+        :type point: (float, float)
+        """
+        return shapely.geometry.Point(point).within(self.shape)
+
     def check(self, point):
         """
         Evaluates whether the trigger area was entered or exited since the last call to this function.
@@ -64,7 +73,7 @@ class Trigger:
         sim_time = traci.simulation.getTime()
         if sim_time > self.last_check:
             old_state = self.state
-            self.state = shapely.geometry.Point(point).within(self.shape)
+            self.state = self.includes(point)
             self.last_check = sim_time
             if self.state != old_state:
                 self.last_event = ENTRY if self.state is True else EXIT
@@ -122,3 +131,15 @@ def check_triggers(triggers, point):
     :type point: (float, float)
     """
     return {trigger.id: trigger.check(point) for trigger in triggers}
+
+
+def check_triggers_state(triggers, point):
+    """
+    Checks a list of triggers and returns a dict containing the results of their states (not events)
+    :param triggers: list of Trigger objects to check
+    :param point: ego vehicle coordinate to check against the triggers
+    :return: dict of trigger IDs and states (True/False)
+    :type triggers: list[Trigger]
+    :type point: (float, float)
+    """
+    return {trigger.id: trigger.includes(point) for trigger in triggers}
