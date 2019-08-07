@@ -70,11 +70,11 @@ def send_message(message, ip, port, fmt="!d"):
     try:
         iter(port)
     except TypeError:
-        ports = [port]
+        port = [port]
     # Create the socket and pack and send the message
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     msg = struct.pack(fmt, *message)
-    for p in ports:
+    for p in port:
         sock.sendto(msg, (ip, p))
 
 
