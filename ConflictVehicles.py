@@ -46,6 +46,8 @@ class ConflictVehicle:
         :return: None
         """
         # Calculate ego and conflict vehicles' ETAs
+        if ego_speed == 0:
+            ego_speed = 0.0001  # avoid division by zero
         conflict_edge = traci.route.getEdges(self.routeID)[0]
         conflict_lane = conflict_edge + "_0"
         conflict_lane_length = traci.lane.getLength(conflict_lane) + self.conflict_target_offset
@@ -64,6 +66,8 @@ class ConflictVehicle:
         if self.deployed and not self.done:
             conflict_dist = conflict_lane_length - traci.vehicle.getLanePosition(self.name)
             conflict_speed = traci.vehicle.getSpeed(self.name)
+            if conflict_speed == 0:
+                conflict_speed = 0.0001  # avoid division by zero
             conflict_eta = conflict_dist / conflict_speed
             if abs(conflict_eta - ego_eta) > 0.25:
                 new_conflict_speed = conflict_dist / ego_eta
