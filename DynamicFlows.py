@@ -6,6 +6,7 @@ Author: Patrick Malcolm
 """
 
 import traci
+import traci.constants as tc
 import random
 import numpy as np
 
@@ -30,13 +31,19 @@ class DynamicFlow:
         :type vehicleMix: dict
         :type departSpeed, arrivalSpeed, name: str
         :type enabled: bool
-        :type departPos: str
         :type vaporizeOnDisable: bool
         """
         self.origin = origin
         self.destination = destination
         self.probability = probability
         self.vehicleMix = vehicleMix if vehicleMix is not None else {"passenger": 1}
+        vClasses = set([traci.vehicletype.getVehicleClass(vType) for vType in self.vehicleMix])
+        if "pedestrian" in vClasses:
+            self._pedestrianFlag = True
+            if len(vClasses) > 1:
+                raise ValueError("Pedestrian and vehicular flows can't be mixed in a DynamicFlow object.")
+        else:
+            self._pedestrianFlag = False
         self.departSpeed = departSpeed
         self.arrivalSpeed = arrivalSpeed
         self.via = via if via is not None else ""
@@ -66,14 +73,27 @@ class DynamicFlow:
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
             pdf /= sum(pdf)
             vType = np.random.choice(vTypes, p=pdf)
-            traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
-                              arrivalSpeed=self.arrivalSpeed, departPos=self.departPos)
+            if self._pedestrianFlag:
+                pedID = self.name+".ped."+str(self.count)
+                traci.person.add(pedID, self.origin, self.departPos, typeID=vType)
+                edges = traci.simulation.findRoute(self.origin, self.destination, vType).edges
+                traci.person.appendWalkingStage(pedID, edges, tc.ARRIVALFLAG_POS_MAX)
+            else:
+                traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
+                                  arrivalSpeed=self.arrivalSpeed, departPos=self.departPos)
             self.count += 1
 
     def vaporize(self):
         """Vaporizes all vehicles belonging to this flow."""
-        veh_list = traci.vehicle.getIDList()
-        for i in range(self.count):
-            vName = self.name+"."+str(i)
-            if vName in veh_list:
-                traci.vehicle.remove(vName)
+        if self._pedestrianFlag is True:
+            ped_list = traci.person.getIDList()
+            for i in range(self.count):
+                pName = self.name+".ped."+str(i)
+                if pName in ped_list:
+                    traci.person.remove(pName)
+        else:
+            veh_list = traci.vehicle.getIDList()
+            for i in range(self.count):
+                vName = self.name+"."+str(i)
+                if vName in veh_list:
+                    traci.vehicle.remove(vName)
