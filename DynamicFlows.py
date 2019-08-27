@@ -12,7 +12,7 @@ import numpy as np
 
 class DynamicFlow:
     def __init__(self, origin, destination, probability, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
-                 via=None, name=None, enabled=True, vaporizeOnDisable=False):
+                 via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False):
         """
         Initializes a DynamicFlow object.
         :param origin: the 'from' edge for the route
@@ -23,12 +23,14 @@ class DynamicFlow:
         :param arrivalSpeed: arrivalSpeed for route (see SUMO documentation)
         :param name: the name to use for the route. Defaults to "origin-destination"
         :param enabled: whether the flow is enabled or disabled
+        :param departPos: determines position on lane at which the vehicle is tried to be inserted. See Sumo docs.
         :param vaporizeOnDisable: if True, vehicles will be vaporized upon disabling the flow
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
         :type departSpeed, arrivalSpeed, name: str
         :type enabled: bool
+        :type departPos: str
         :type vaporizeOnDisable: bool
         """
         self.origin = origin
@@ -42,6 +44,7 @@ class DynamicFlow:
         traci.route.add(self.name, [origin, destination])
         traci.route.setParameter(self.name, "via", self.via)
         self.enabled = enabled
+        self.departPos = departPos
         self.vaporizeOnDisable = vaporizeOnDisable
         self.count = 0
 
@@ -64,7 +67,7 @@ class DynamicFlow:
             pdf /= sum(pdf)
             vType = np.random.choice(vTypes, p=pdf)
             traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
-                              arrivalSpeed=self.arrivalSpeed)
+                              arrivalSpeed=self.arrivalSpeed, departPos=self.departPos)
             self.count += 1
 
     def vaporize(self):
