@@ -10,25 +10,32 @@ from . import Triggers
 
 
 class _TriggeredFlow:
-    def __init__(self, flow, enable_trigger_id, disable_trigger_id, enable_event, disable_event):
+    def __init__(self, flow, enable_trigger_id, disable_trigger_id, vaporize_trigger_id, enable_event, disable_event,
+                 vaporize_event):
         """
         Initializes a _TriggeredFlow object. Only intended for internal use.
         :param flow: DynamicFlow object to enable/disable based on the trigger events
         :param enable_trigger_id: id of the enabling Trigger object
         :param disable_trigger_id: id of the disabling Trigger object
+        :param vaporize_trigger_id: id of the vaporizing Trigger object
         :param enable_event: the event to detect on the enabling Trigger
         :param disable_event: the event to detect on the disabling Trigger
+        :param vaporize_event: the event to detect on the vaporizing Trigger
         :type flow: DynamicFlows.DynamicFlow
         :type enable_trigger_id: str
         :type disable_trigger_id: str
+        :type vaporize_trigger_id: str
         :type enable_event: Triggers._Event
         :type disable_event: Triggers._Event
+        :type vaporize_event: Triggers._Event
         """
         self.flow = flow
         self.enable_trigger_id = enable_trigger_id
         self.disable_trigger_id = disable_trigger_id
+        self.vaporize_trigger_id = vaporize_trigger_id
         self.enable_event = enable_event
         self.disable_event = disable_event
+        self.vaporize_event = vaporize_event
 
 
 class TriggeredFlows:
@@ -45,7 +52,8 @@ class TriggeredFlows:
         self.triggers = triggers
         self.flows = []  # type: list[_TriggeredFlow]
 
-    def add(self, flow, enable_trigger_id, disable_trigger_id, enable_event=Triggers.ENTRY, disable_event=Triggers.ENTRY):
+    def add(self, flow, enable_trigger_id, disable_trigger_id, enable_event=Triggers.ENTRY,
+            disable_event=Triggers.ENTRY, vaporize_trigger_id=None, vaporize_event=Triggers.ENTRY):
         """
         Adds a new DynamicFlow to the configuration with the specified triggers.
         :param flow: DynamicFlow object to be enabled/disabled by Triggers
@@ -53,14 +61,19 @@ class TriggeredFlows:
         :param disable_trigger_id: id of disabling Trigger
         :param enable_event: enabling event
         :param disable_event: disabling event
+        :param vaporize_trigger_id: id of vaporizing Trigger
+        :param vaporize_event: vaporizing event
         :return: None
         :type flow: DynamicFlows.DynamicFlow
         :type enable_trigger_id: str
         :type disable_trigger_id: str
         :type enable_event: Triggers._Event
         :type disable_event: Triggers._Event
+        :type vaporize_trigger_id: str
+        :type vaporize_event: Triggers._Event
         """
-        tf = _TriggeredFlow(flow, enable_trigger_id, disable_trigger_id, enable_event, disable_event)
+        tf = _TriggeredFlow(flow, enable_trigger_id, disable_trigger_id, vaporize_trigger_id, enable_event,
+                            disable_event, vaporize_event)
         self.flows.append(tf)
 
     def run(self, point):
@@ -77,6 +90,8 @@ class TriggeredFlows:
                     tf.flow.enable()
                 if tf.disable_trigger_id in trigger_states and trigger_states[tf.disable_trigger_id] == tf.disable_event:
                     tf.flow.disable()
+                if tf.vaporize_trigger_id in trigger_states and trigger_states[tf.vaporize_trigger_id] == tf.vaporize_event:
+                    tf.flow.vaporize()
 
         for tf in self.flows:
             tf.flow.run()
