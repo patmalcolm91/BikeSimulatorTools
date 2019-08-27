@@ -12,7 +12,7 @@ import numpy as np
 
 class DynamicFlow:
     def __init__(self, origin, destination, probability, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
-                 via=None, name=None, enabled=True):
+                 via=None, name=None, enabled=True, vaporizeOnDisable=False):
         """
         Initializes a DynamicFlow object.
         :param origin: the 'from' edge for the route
@@ -23,11 +23,13 @@ class DynamicFlow:
         :param arrivalSpeed: arrivalSpeed for route (see SUMO documentation)
         :param name: the name to use for the route. Defaults to "origin-destination"
         :param enabled: whether the flow is enabled or disabled
+        :param vaporizeOnDisable: if True, vehicles will be vaporized upon disabling the flow
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
         :type departSpeed, arrivalSpeed, name: str
         :type enabled: bool
+        :type vaporizeOnDisable: bool
         """
         self.origin = origin
         self.destination = destination
@@ -40,6 +42,7 @@ class DynamicFlow:
         traci.route.add(self.name, [origin, destination])
         traci.route.setParameter(self.name, "via", self.via)
         self.enabled = enabled
+        self.vaporizeOnDisable = vaporizeOnDisable
         self.count = 0
 
     def enable(self):
@@ -49,6 +52,8 @@ class DynamicFlow:
     def disable(self):
         """Disables this dynamic flow."""
         self.enabled = False
+        if self.vaporizeOnDisable:
+            self.vaporize()
 
     def run(self):
         """Processes the dynamic flow and inserts a vehicle if necessary. Should be run every simulation step."""
@@ -61,3 +66,11 @@ class DynamicFlow:
             traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
                               arrivalSpeed=self.arrivalSpeed)
             self.count += 1
+
+    def vaporize(self):
+        """Vaporizes all vehicles belonging to this flow."""
+        veh_list = traci.vehicle.getIDList()
+        for i in range(self.count):
+            vName = self.name+"."+str(i)
+            if vName in veh_list:
+                traci.vehicle.remove(vName)
