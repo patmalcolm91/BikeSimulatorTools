@@ -78,7 +78,7 @@ class DynamicFlow:
             vType = np.random.choice(vTypes, p=pdf)
             if self._pedestrianFlag:
                 pedID = self.name+".ped."+str(self.count)
-                traci.person.add(pedID, self.origin, self.departPos, typeID=vType)
+                traci.person.add(pedID, self.origin, self.departPos, typeID=vType)  # TODO: waiting on upstream bugfix
                 edges = traci.simulation.findRoute(self.origin, self.destination, vType).edges
                 traci.person.appendWalkingStage(pedID, edges, tc.ARRIVALFLAG_POS_MAX)
             else:
