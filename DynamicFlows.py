@@ -13,7 +13,7 @@ import numpy as np
 
 class DynamicFlow:
     def __init__(self, origin, destination, probability, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
-                 via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False):
+                 via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False, maxCount=None):
         """
         Initializes a DynamicFlow object.
         :param origin: the 'from' edge for the route
@@ -26,12 +26,14 @@ class DynamicFlow:
         :param enabled: whether the flow is enabled or disabled
         :param departPos: determines position on lane at which the vehicle is tried to be inserted. See Sumo docs.
         :param vaporizeOnDisable: if True, vehicles will be vaporized upon disabling the flow
+        :param maxCount: maximum number of vehicles to generate
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
         :type departSpeed, arrivalSpeed, name: str
         :type enabled: bool
         :type vaporizeOnDisable: bool
+        :type maxCount: int
         """
         self.origin = origin
         self.destination = destination
@@ -53,6 +55,7 @@ class DynamicFlow:
         self.enabled = enabled
         self.departPos = departPos
         self.vaporizeOnDisable = vaporizeOnDisable
+        self.maxCount = np.inf if maxCount is None else maxCount
         self.count = 0
 
     def enable(self):
@@ -68,7 +71,7 @@ class DynamicFlow:
     def run(self):
         """Processes the dynamic flow and inserts a vehicle if necessary. Should be run every simulation step."""
         p = 1 - (1 - self.probability)**traci.simulation.getDeltaT()  # Get probability for sim step
-        if self.enabled and random.random() < p:
+        if self.enabled and random.random() < p and self.count < self.maxCount:
             vTypes = np.array(list(self.vehicleMix.keys()))
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
             pdf /= sum(pdf)
