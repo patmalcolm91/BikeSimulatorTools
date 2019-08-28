@@ -9,11 +9,13 @@ import traci
 import traci.constants as tc
 import random
 import numpy as np
+from . import RouteTools
 
 
 class DynamicFlow:
     def __init__(self, origin, destination, probability, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
-                 via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False, maxCount=None):
+                 via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False, maxCount=None,
+                 departAnywhere=False):
         """
         Initializes a DynamicFlow object.
         :param origin: the 'from' edge for the route
@@ -27,6 +29,7 @@ class DynamicFlow:
         :param departPos: determines position on lane at which the vehicle is tried to be inserted. See Sumo docs.
         :param vaporizeOnDisable: if True, vehicles will be vaporized upon disabling the flow
         :param maxCount: maximum number of vehicles to generate
+        :param departAnywhere: if True, vehicles may depart from any edge along the route, rather than just the first. Only supported for pedestrians.
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
@@ -34,6 +37,7 @@ class DynamicFlow:
         :type enabled: bool
         :type vaporizeOnDisable: bool
         :type maxCount: int
+        :type departAnywhere: bool
         """
         self.origin = origin
         self.destination = destination
@@ -56,6 +60,7 @@ class DynamicFlow:
         self.departPos = departPos
         self.vaporizeOnDisable = vaporizeOnDisable
         self.maxCount = np.inf if maxCount is None else maxCount
+        self.departAnywhere = departAnywhere
         self.count = 0
 
     def enable(self):
@@ -76,10 +81,22 @@ class DynamicFlow:
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
             pdf /= sum(pdf)
             vType = np.random.choice(vTypes, p=pdf)
+            vClass = traci.vehicletype.getVehicleClass(vType)
             if self._pedestrianFlag:
                 pedID = self.name+".ped."+str(self.count)
-                traci.person.add(pedID, self.origin, self.departPos, typeID=vType)  # TODO: waiting on upstream bugfix
                 edges = traci.simulation.findRoute(self.origin, self.destination, vType).edges
+                lanes = [RouteTools.get_rightmost_allowed_lane(edge, vClass) for edge in edges]
+                if self.departPos == tc.DEPARTFLAG_POS_RANDOM:
+                    if self.departAnywhere:
+                        departLane, departPos = RouteTools.random_depart_pos(lanes)
+                    else:
+                        departLane, departPos = lanes[0], RouteTools.random_depart_pos(lanes[0])
+                else:
+                    departLane = lanes[0]
+                    departPos = self.departPos
+                departEdge = traci.lane.getEdgeID(departLane)
+                traci.person.add(pedID, departEdge, departPos, typeID=vType)
+                edges = edges[edges.index(departEdge):]
                 traci.person.appendWalkingStage(pedID, edges, tc.ARRIVALFLAG_POS_MAX)
             else:
                 traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,

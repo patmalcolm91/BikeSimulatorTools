@@ -27,3 +27,8 @@ Module for creating higher-level configurations to manage interactions between o
 #### TriggeredFlows
 Class for connecting Trigger state changes to DynamicFlow enable and disable events.
 Checks all triggers and enables/disables flows when the corresponding Trigger object registers the specified event.
+
+### RouteTools
+Contains miscellaneous tools for dealing with routes, departures, and arrivals.
+A function for replicating and extending random departure position functionality for people is included 
+(currently this can only be done in TraCI with vehicles, and not people.
