@@ -110,7 +110,7 @@ class DynamicFlow:
             for i in range(self.count):
                 pName = self.name+".ped."+str(i)
                 if pName in ped_list:
-                    traci.person.remove(pName)
+                    traci.person.removeStages(pName)
         else:
             veh_list = traci.vehicle.getIDList()
             for i in range(self.count):
