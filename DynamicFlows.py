@@ -50,6 +50,12 @@ class DynamicFlow:
                 raise ValueError("Pedestrian and vehicular flows can't be mixed in a DynamicFlow object.")
         else:
             self._pedestrianFlag = False
+        self.edges = dict()  # dict to hold list of route edges for each vType in the flow
+        self.lanes = dict()  # dict to hold list of route lanes for each vClass in the flow
+        for vType in self.vehicleMix:
+            vClass = traci.vehicletype.getVehicleClass(vType)
+            self.edges[vType] = traci.simulation.findRoute(self.origin, self.destination, vType).edges
+            self.lanes[vClass] = [RouteTools.get_rightmost_allowed_lane(edge, vClass) for edge in self.edges[vType]]
         self.departSpeed = departSpeed
         self.arrivalSpeed = arrivalSpeed
         self.via = via if via is not None else ""
@@ -84,8 +90,8 @@ class DynamicFlow:
             vClass = traci.vehicletype.getVehicleClass(vType)
             if self._pedestrianFlag:
                 pedID = self.name+".ped."+str(self.count)
-                edges = traci.simulation.findRoute(self.origin, self.destination, vType).edges
-                lanes = [RouteTools.get_rightmost_allowed_lane(edge, vClass) for edge in edges]
+                edges = self.edges[vType]
+                lanes = self.lanes[vClass]
                 if self.departPos == tc.DEPARTFLAG_POS_RANDOM:
                     if self.departAnywhere:
                         departLane, departPos = RouteTools.random_depart_pos(lanes)
