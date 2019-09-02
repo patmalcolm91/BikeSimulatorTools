@@ -71,6 +71,9 @@ class ConflictVehicle:
             conflict_eta = conflict_dist / conflict_speed
             if abs(conflict_eta - ego_eta) > 0.25:
                 new_conflict_speed = conflict_dist / ego_eta
+                if new_conflict_speed < 0:
+                    print("Negative speed calculated. Setting to zero.")
+                    new_conflict_speed = 0
                 traci.vehicle.slowDown(self.name, new_conflict_speed, 0)
 
     def reset(self):
