@@ -13,11 +13,11 @@ from . import RouteTools
 
 
 class DynamicFlow:
-    def __init__(self, origin, destination, probability, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
+    def __init__(self, origin, destination, probability=None, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
                  via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False, maxCount=None,
-                 departAnywhere=False):
+                 departAnywhere=False, headway=None):
         """
-        Initializes a DynamicFlow object.
+        Initializes a DynamicFlow object. Stochastic if probability given, deterministic if headway given.
         :param origin: the 'from' edge for the route
         :param destination: the 'to' edge for the route
         :param probability: probability for emitting a vehicle each second
@@ -30,6 +30,7 @@ class DynamicFlow:
         :param vaporizeOnDisable: if True, vehicles will be vaporized upon disabling the flow
         :param maxCount: maximum number of vehicles to generate
         :param departAnywhere: if True, vehicles may depart from any edge along the route, rather than just the first. Only supported for pedestrians.
+        :param headway: desired headway of generated vehicles (for deterministic flows). If set, one vehicle will be generated each {headway} seconds
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
@@ -38,10 +39,17 @@ class DynamicFlow:
         :type vaporizeOnDisable: bool
         :type maxCount: int
         :type departAnywhere: bool
+        :type headway: float
         """
         self.origin = origin
         self.destination = destination
         self.probability = probability
+        self.headway = headway
+        if probability is not None and headway is not None:
+            raise UserWarning("Both probability and headway defined in DynamicFlow, but only one should be defined.")
+        if probability is None and headway is None:
+            raise UserWarning("Must define either probability or headway in DynamicFlow.")
+        self.steps_since_last_vehicle = np.inf
         self.vehicleMix = vehicleMix if vehicleMix is not None else {"passenger": 1}
         vClasses = set([traci.vehicletype.getVehicleClass(vType) for vType in self.vehicleMix])
         if "pedestrian" in vClasses:
@@ -81,8 +89,15 @@ class DynamicFlow:
 
     def run(self):
         """Processes the dynamic flow and inserts a vehicle if necessary. Should be run every simulation step."""
-        p = 1 - (1 - self.probability)**traci.simulation.getDeltaT()  # Get probability for sim step
-        if self.enabled and random.random() < p and self.count < self.maxCount:
+        time_step = traci.simulation.getDeltaT()
+        self.steps_since_last_vehicle += 1
+        if self.headway is not None:  # if deterministic flow
+            send_vehicle = time_step * self.steps_since_last_vehicle >= self.headway
+        else:  # if stochastic flow
+            p = 1 - (1 - self.probability)**time_step  # Get probability for sim step
+            send_vehicle = random.random() < p
+        if self.enabled and send_vehicle and self.count < self.maxCount:
+            self.steps_since_last_vehicle = 0
             vTypes = np.array(list(self.vehicleMix.keys()))
             pdf = np.array([self.vehicleMix[v] for v in vTypes], dtype=float)
             pdf /= sum(pdf)
