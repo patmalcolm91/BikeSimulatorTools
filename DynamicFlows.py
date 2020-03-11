@@ -67,8 +67,17 @@ class DynamicFlow:
         self.departSpeed = departSpeed
         self.arrivalSpeed = arrivalSpeed
         self.via = via if via is not None else ""
-        self.name = name if name is not None else origin + "-" + destination
-        traci.route.add(self.name, [origin, destination])
+        name = name if name is not None else origin + "-" + destination
+        self.name = name
+        existing_routes = traci.route.getIDList()
+        i = 1
+        while self.name in existing_routes:
+            self.name = name + "." + str(i)
+            i += 1
+        try:
+            traci.route.add(self.name, [origin, destination])
+        except traci.TraCIException as e:
+            raise UserWarning("Could not add route", self.name, "from", self.origin, "to", self.destination) from e
         traci.route.setParameter(self.name, "via", self.via)
         self.enabled = enabled
         self.departPos = departPos
