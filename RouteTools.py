@@ -38,13 +38,15 @@ def get_rightmost_allowed_lane(edge, vClass):
     :param vClass: vehicle class
     :return: lane id of the rightmost lane allowed for vClass
     """
-    candidates = []
-    for lane in traci.lane.getIDList():
-        if traci.lane.getEdgeID(lane) != edge:
-            continue
-        allowed = traci.lane.getAllowed(lane)
-        if len(allowed) == 0 or vClass in allowed:
-            candidates.append(lane)
-    if len(candidates) == 0:
-        raise traci.TraCIException("No allowed lane for vClass "+vClass+" on edge "+edge+".")
-    return np.sort(candidates)[0]  # choose the first alphabetically, which should be the rightmost
+    # generate lane names of the form edgeID_i and return the first one on which vClass is allowed
+    i = 0
+    while True:
+        try:
+            lane = edge+"_"+str(i)
+            allowed = traci.lane.getAllowed(edge+"_"+str(i))
+            if len(allowed) == 0 or vClass in allowed:
+                return lane
+        except traci.TraCIException:
+            break  # the generated lane id doesn't exist, so quit
+        i += 1
+    raise traci.TraCIException("No allowed lane for vClass " + vClass + " on edge " + edge + ".")
