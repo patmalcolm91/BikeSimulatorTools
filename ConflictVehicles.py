@@ -10,6 +10,7 @@ import traci
 import traci.constants as tc
 import numpy as np
 import xml.etree.ElementTree as ET
+from . import RouteTools
 
 
 class ConflictVehicle:
@@ -34,6 +35,10 @@ class ConflictVehicle:
         self.routeID = routeID
         self.ego_target = ego_target
         self.conflict_target_offset = conflict_target_offset
+        self.conflict_edge = traci.route.getEdges(self.routeID)[0]
+        self.conflict_lane = RouteTools.get_rightmost_allowed_lane(self.conflict_edge, self.typeID)
+        self.conflict_lane_length = traci.lane.getLength(self.conflict_lane) + self.conflict_target_offset
+        self.conflict_lane_speed = traci.lane.getMaxSpeed(self.conflict_lane)
         self.deployed = False
         self.done = False
         self.release_point = release_point
@@ -48,13 +53,9 @@ class ConflictVehicle:
         # Calculate ego and conflict vehicles' ETAs
         if ego_speed == 0:
             ego_speed = 0.0001  # avoid division by zero
-        conflict_edge = traci.route.getEdges(self.routeID)[0]
-        conflict_lane = conflict_edge + "_0"
-        conflict_lane_length = traci.lane.getLength(conflict_lane) + self.conflict_target_offset
-        conflict_lane_speed = traci.lane.getMaxSpeed(conflict_lane)
         ego_dist = np.linalg.norm(np.array(self.ego_target) - np.array(ego_pos))
         ego_eta = ego_dist / ego_speed
-        conflict_eta_total = conflict_lane_length / conflict_lane_speed
+        conflict_eta_total = self.conflict_lane_length / self.conflict_lane_speed
         # Check if the conflict vehicle should be deployed
         if not self.deployed and ego_eta <= conflict_eta_total:
             traci.vehicle.add(self.name, self.routeID, typeID=self.typeID, departSpeed="max")
@@ -64,7 +65,7 @@ class ConflictVehicle:
             self.done = True
         # If the conflict vehicle is en route but not past the release point, potentially update its speed
         if self.deployed and not self.done:
-            conflict_dist = conflict_lane_length - traci.vehicle.getLanePosition(self.name)
+            conflict_dist = self.conflict_lane_length - traci.vehicle.getLanePosition(self.name)
             conflict_speed = traci.vehicle.getSpeed(self.name)
             if conflict_speed == 0:
                 conflict_speed = 0.0001  # avoid division by zero
