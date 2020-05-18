@@ -43,6 +43,13 @@ class ConflictVehicle:
         self.done = False
         self.release_point = release_point
 
+    def on_create(self):
+        """
+        Placeholder callback that is called as soon as the vehicle is added to the Sumo simulation.
+        Override this method to add custom functionality as desired.
+        """
+        pass
+
     def check(self, ego_pos, ego_speed):
         """
         Project the ETA of the ego vehicle to the target point and if it's within range, deploy the conflict vehicle.
@@ -60,6 +67,7 @@ class ConflictVehicle:
         if not self.deployed and ego_eta <= conflict_eta_total:
             traci.vehicle.add(self.name, self.routeID, typeID=self.typeID, departSpeed="max")
             self.deployed = True
+            self.on_create()
         # Check if the ego vehicle has passed the release point
         if self.deployed and ego_dist < self.release_point:
             self.done = True
