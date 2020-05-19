@@ -96,6 +96,26 @@ class DynamicFlow:
         if self.vaporizeOnDisable:
             self.vaporize()
 
+    def on_vehicle_create(self, vehicle_id):
+        """
+        Placeholder callback that is called as soon as a vehicle is added to the Sumo simulation.
+        Override this method to add custom functionality as desired.
+
+        :param vehicle_id: ID of the vehicle just created
+        :return: None
+        """
+        pass
+
+    def on_person_create(self, person_id):
+        """
+        Placeholder callback that is called as soon as a person is added to the Sumo simulation.
+        Override this method to add custom functionality as desired.
+
+        :param person_id: ID of the vehicle just created
+        :return: None
+        """
+        pass
+
     def run(self):
         """Processes the dynamic flow and inserts a vehicle if necessary. Should be run every simulation step."""
         time_step = traci.simulation.getDeltaT()
@@ -128,9 +148,12 @@ class DynamicFlow:
                 traci.person.add(pedID, departEdge, departPos, typeID=vType)
                 edges = edges[edges.index(departEdge):]
                 traci.person.appendWalkingStage(pedID, edges, tc.ARRIVALFLAG_POS_MAX)
+                self.on_person_create(pedID)
             else:
-                traci.vehicle.add(self.name+"."+str(self.count), self.name, typeID=vType, departSpeed=self.departSpeed,
+                vehicle_id = self.name+"."+str(self.count)
+                traci.vehicle.add(vehicle_id, self.name, typeID=vType, departSpeed=self.departSpeed,
                                   arrivalSpeed=self.arrivalSpeed, departPos=self.departPos)
+                self.on_vehicle_create(vehicle_id)
             self.count += 1
 
     def vaporize(self):
