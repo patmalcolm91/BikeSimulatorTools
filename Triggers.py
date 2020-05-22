@@ -107,9 +107,18 @@ class Triggers:
         self._trigger_list = []
 
     def append(self, trigger):
+        """
+        Append Trigger to Triggers list
+        :param trigger: trigger to append
+        :return: None
+        :type trigger: Trigger
+        """
         self._trigger_list.append(trigger)
 
     def __getitem__(self, item):
+        """
+        :rtype: Trigger
+        """
         if type(item) == str:
             for trigger in self._trigger_list:
                 if trigger.id == item:
