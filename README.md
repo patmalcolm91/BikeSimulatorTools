@@ -21,6 +21,9 @@ Module for inserting a single vehicle timed to create a conflict with the ego ve
 The vehicle will be sent at a time which will bring it to the end of the first lane in its route (+/- an offset)
 when the ego vehicle is projected to reach a specified target point.
 
+### VehicleSignalControl
+Module for controlling vehicle signals (including support for blinking signals) either manually or based on Triggers.
+
 ### SimConfig
 Module for creating higher-level configurations to manage interactions between other modules in this package.
 

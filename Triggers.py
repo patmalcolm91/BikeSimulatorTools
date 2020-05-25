@@ -102,6 +102,37 @@ class Trigger:
         return chk == EXIT
 
 
+class Triggers:
+    def __init__(self):
+        self._trigger_list = []
+
+    def append(self, trigger):
+        """
+        Append Trigger to Triggers list
+        :param trigger: trigger to append
+        :return: None
+        :type trigger: Trigger
+        """
+        self._trigger_list.append(trigger)
+
+    def __getitem__(self, item):
+        """
+        :rtype: Trigger
+        """
+        if type(item) == str:
+            for trigger in self._trigger_list:
+                if trigger.id == item:
+                    return trigger
+            raise IndexError("No trigger with id ", item)
+        elif type(item) == int:
+            return self._trigger_list[item]
+        else:
+            TypeError("Triggers can not be indexed with object of type '" + type(item).__name__ + "'")
+
+    def __iter__(self):
+        return iter(self._trigger_list)
+
+
 def read_triggers_from_file(file, type_value="trigger"):
     """
     Reads polygons from a Sumo XML additionals file and generates a list of Trigger objects.
@@ -113,7 +144,7 @@ def read_triggers_from_file(file, type_value="trigger"):
     :type type_value: str
     """
     root = ET.parse(file).getroot()
-    triggers = []
+    triggers = Triggers()
     for child in root:
         attrs = child.attrib
         if child.tag == "poly" and "type" in attrs and attrs["type"] == type_value:
