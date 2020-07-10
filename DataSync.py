@@ -50,17 +50,19 @@ class Server:
         return msgs
 
 
-def send_message(message, ip, port, fmt="!d"):
+def send_message(message, ip, port, fmt="!d", broadcast=False):
     """
     Sends a UDP message to the specified address and port(s).
     :param message: Message to be sent via UDP
     :param ip: destination IP address
     :param port: destination port or list of ports
     :param fmt: byte format string (see https://docs.python.org/3/library/struct.html#format-characters)
+    :param broadcast: set to True if broadcast packet
     :return: None
     :type ip: str
     :type port: int
     :type fmt: str
+    :type broadcast: bool
     """
     # If message is a single value, convert it to a tuple for packing
     try:
@@ -73,6 +75,8 @@ def send_message(message, ip, port, fmt="!d"):
         port = [port]
     # Create the socket and pack and send the message
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    if broadcast:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     msg = struct.pack(fmt, *message)
     for p in port:
         sock.sendto(msg, (ip, p))
