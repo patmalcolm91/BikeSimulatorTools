@@ -4,4 +4,5 @@ Package with miscellaneous tools for working with a bicycle simulator running wi
 Author: Patrick Malcolm
 """
 
-__all__ = ["SimConfig", "DataSync", "Triggers", "DynamicFlows", "ConflictVehicles", "RouteTools", "VehicleSignalControl"]
+__all__ = ["SimConfig", "DataSync", "Triggers", "DynamicFlows", "ConflictVehicles", "RouteTools", "VehicleSignalControl",
+           "Client"]
