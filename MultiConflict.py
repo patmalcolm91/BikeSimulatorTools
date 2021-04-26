@@ -5,9 +5,13 @@ A module for configuring a conflict vehicle to meet an ego vehicle multiple time
 import numpy as np
 import traci
 from shapely.geometry import LineString, Point
-from collections import namedtuple
+from typing import NamedTuple
 
-_ConflictTarget = namedtuple("_ConflictTarget", ("ego_station", "conflict_vehicle_station", "release_point"))
+
+class _ConflictTarget(NamedTuple):
+    ego_station: float
+    conflict_vehicle_station: float
+    release_point: float
 
 
 class MultiConflict:
