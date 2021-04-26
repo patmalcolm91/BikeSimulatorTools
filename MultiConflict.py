@@ -5,6 +5,9 @@ A module for configuring a conflict vehicle to meet an ego vehicle multiple time
 import numpy as np
 import traci
 from shapely.geometry import LineString, Point
+from collections import namedtuple
+
+_ConflictTarget = namedtuple("_ConflictTarget", ("ego_station", "conflict_vehicle_station", "release_point"))
 
 
 class MultiConflict:
@@ -17,7 +20,7 @@ class MultiConflict:
             else traci.vehicle.getRouteID(self.conflict_vehicle_id)
         self._ego_trajectory = self._line_from_route(self.ego_route)
         self._conflict_vehicle_trajectory = self._line_from_route(self.conflict_vehicle_route)
-        self._targets = []  # type: list[tuple[float, float, float]] # ego station, cv station, release point
+        self._targets = []  # type: list[_ConflictTarget] # ego station, cv station, release point
         self.release_point = release_point
         self._active = False
 
@@ -36,7 +39,7 @@ class MultiConflict:
         _ep, _cvp = Point(ego_coords), Point(conflict_vehicle_coords)
         _e_station = self._ego_trajectory.project(_ep)
         _cv_station = self._conflict_vehicle_trajectory.project(_cvp)
-        self._targets.append((_e_station, _cv_station, release_point))
+        self._targets.append(_ConflictTarget(_e_station, _cv_station, release_point))
         self._active = True
 
     def check(self):
