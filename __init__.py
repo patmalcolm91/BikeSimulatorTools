@@ -5,4 +5,4 @@ Author: Patrick Malcolm
 """
 
 __all__ = ["SimConfig", "DataSync", "Triggers", "DynamicFlows", "ConflictVehicles", "RouteTools", "VehicleSignalControl",
-           "Client"]
+           "Client", "MultiConflict"]
