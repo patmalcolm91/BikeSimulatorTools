@@ -19,6 +19,7 @@ class MultiConflict:
         self._conflict_vehicle_trajectory = self._line_from_route(self.conflict_vehicle_route)
         self._targets = []  # type: list[tuple[float, float, float]] # ego station, cv station, release point
         self.release_point = release_point
+        self._active = False
 
     @staticmethod
     def _line_from_route(route_id):
@@ -36,10 +37,14 @@ class MultiConflict:
         _e_station = self._ego_trajectory.project(_ep)
         _cv_station = self._conflict_vehicle_trajectory.project(_cvp)
         self._targets.append((_e_station, _cv_station, release_point))
+        self._active = True
 
     def check(self):
         """Check vehicle trajectories and adjust conflict vehicle speed as necessary."""
         if len(self._targets) == 0:
+            if self._active:
+                self._active = False
+                traci.vehicle.setSpeed(self.conflict_vehicle_id, -1)
             return None
         ego_target, cv_target, release_point = self._targets[0]
         ego_speed = traci.vehicle.getSpeed(self.ego_id)
