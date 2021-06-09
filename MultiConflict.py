@@ -110,7 +110,10 @@ class MultiConflict:
             self._waiting = False
         else:
             cv_speed = traci.vehicle.getSpeed(self.conflict_vehicle_id)
-            dur = (cv_target - cv_station) / cv_speed / 2
+            if cv_speed > 0:
+                dur = max(0, (cv_target - cv_station) / cv_speed / 2)
+            else:
+                dur = 0
             traci.vehicle.slowDown(self.conflict_vehicle_id, 0, dur)
             self._waiting = True
 
