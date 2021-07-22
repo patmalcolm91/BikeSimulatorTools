@@ -15,7 +15,7 @@ from . import RouteTools
 class DynamicFlow:
     def __init__(self, origin, destination, probability=None, vehicleMix=None, departSpeed="max", arrivalSpeed="current",
                  via=None, name=None, enabled=True, departPos="0", vaporizeOnDisable=False, maxCount=None,
-                 departAnywhere=False, headway=None):
+                 departAnywhere=False, headway=None, soft_vaporize=False, vaporize_radius=60.0, ego_id="ego"):
         """
         Initializes a DynamicFlow object. Stochastic if probability given, deterministic if headway given.
         :param origin: the 'from' edge for the route
@@ -31,6 +31,9 @@ class DynamicFlow:
         :param maxCount: maximum number of vehicles to generate
         :param departAnywhere: if True, vehicles may depart from any edge along the route, rather than just the first. Only supported for pedestrians.
         :param headway: desired headway of generated vehicles (for deterministic flows). If set, one vehicle will be generated each {headway} seconds
+        :param soft_vaporize: if True, vehicles within vaporize_radius of the ego vehicle will not be vaporized
+        :param vaporize_radius: radius from ego vehicle within which vehicles will not be vaporized if exclude_nearby_vehicles is True
+        :param ego_id: id of vehicle around which not to vaporize vehicles if soft_vaporize is True
         :type origin, destination: str
         :type probability: float
         :type vehicleMix: dict
@@ -82,6 +85,11 @@ class DynamicFlow:
         self.enabled = enabled
         self.departPos = departPos
         self.vaporizeOnDisable = vaporizeOnDisable
+        self.soft_vaporize = soft_vaporize
+        if self.soft_vaporize and self._pedestrianFlag:
+            raise NotImplementedError("Soft vaporize mode not supported for pedestrian DynamicFlows.")
+        self.vaporize_radius = vaporize_radius
+        self.ego_id = ego_id
         self.maxCount = np.inf if maxCount is None else maxCount
         self.departAnywhere = departAnywhere
         self.count = 0
@@ -158,15 +166,29 @@ class DynamicFlow:
 
     def vaporize(self):
         """Vaporizes all vehicles belonging to this flow."""
-        if self._pedestrianFlag is True:
-            ped_list = traci.person.getIDList()
-            for i in range(self.count):
-                pName = self.name+".ped."+str(i)
-                if pName in ped_list:
-                    traci.person.removeStages(pName)
+        if not self.soft_vaporize:
+            if self._pedestrianFlag is True:
+                ped_list = traci.person.getIDList()
+                for i in range(self.count):
+                    pName = self.name + ".ped." + str(i)
+                    if pName in ped_list:
+                        traci.person.removeStages(pName)
+            else:
+                veh_list = traci.vehicle.getIDList()
+                for i in range(self.count):
+                    vName = self.name + "." + str(i)
+                    if vName in veh_list:
+                        traci.vehicle.remove(vName)
         else:
+            traci.vehicle.subscribeContext(self.ego_id, traci.constants.CMD_GET_VEHICLE_VARIABLE, self.vaporize_radius,
+                                           {traci.constants.VAR_ROAD_ID})
+            # traci.vehicle.addSubscriptionFilterDownstreamDistance(self.vaporize_radius)
+            # traci.vehicle.addSubscriptionFilterUpstreamDistance(self.vaporize_radius)
+            # traci.vehicle.addSubscriptionFilterFieldOfVision(self.vaporize_fov) # angle in degrees
+            context_subscription_results = traci.vehicle.getContextSubscriptionResults(self.ego_id)
             veh_list = traci.vehicle.getIDList()
             for i in range(self.count):
-                vName = self.name+"."+str(i)
-                if vName in veh_list:
+                vName = self.name + "." + str(i)
+                # if vName in veh_list:
+                if vName in veh_list and vName != self.ego_id and vName not in context_subscription_results.keys():
                     traci.vehicle.remove(vName)
