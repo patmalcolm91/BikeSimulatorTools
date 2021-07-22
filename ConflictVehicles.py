@@ -11,6 +11,7 @@ import traci.constants as tc
 import numpy as np
 import xml.etree.ElementTree as ET
 from . import RouteTools
+import warnings
 
 
 class ConflictVehicle:
@@ -58,6 +59,9 @@ class ConflictVehicle:
         :return: None
         """
         # Calculate ego and conflict vehicles' ETAs
+        if ego_speed > 20:
+            warnings.warn("Implausible ego speed " + str(ego_speed) + " passed to ConflictVehicle.check(). Ignoring!")
+            return
         if ego_speed == 0:
             ego_speed = 0.0001  # avoid division by zero
         ego_dist = np.linalg.norm(np.array(self.ego_target) - np.array(ego_pos))
