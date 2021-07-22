@@ -59,7 +59,7 @@ class ConflictVehicle:
         :return: None
         """
         # Calculate ego and conflict vehicles' ETAs
-        if ego_speed > 20:
+        if ego_speed < 0 or ego_speed > 20:
             warnings.warn("Implausible ego speed " + str(ego_speed) + " passed to ConflictVehicle.check(). Ignoring!")
             return
         if ego_speed == 0:
