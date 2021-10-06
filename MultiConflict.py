@@ -56,6 +56,7 @@ class MultiConflict:
         self.release_point = release_point
         self._active = False
         self._waiting = False
+        self.paused = False
 
     @staticmethod
     def _line_from_route(route_id):
@@ -137,6 +138,8 @@ class MultiConflict:
 
     def check(self):
         """Check vehicle trajectories and adjust conflict vehicle speed as necessary. Call every simulation step."""
+        if self.paused:
+            traci.vehicle.slowDown(self.conflict_vehicle_id, 0, 2)
         if len(self._targets) == 0:
             if self._active:
                 self._active = False
