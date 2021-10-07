@@ -140,6 +140,7 @@ class MultiConflict:
         """Check vehicle trajectories and adjust conflict vehicle speed as necessary. Call every simulation step."""
         if self.paused:
             traci.vehicle.slowDown(self.conflict_vehicle_id, 0, 2)
+            return None
         if len(self._targets) == 0:
             if self._active:
                 self._active = False
