@@ -62,7 +62,7 @@ class ConflictVehicle:
         :param ego_speed: speed of ego vehicle (m/s)
         :return: None
         """
-        if not self.vehicle_present_in_simulation:
+        if self.deployed and not self.done and not self.vehicle_present_in_simulation:
             warnings.warn("Conflict Vehicle " + self.name + " was removed from simulation.")
             return None
         # Calculate ego and conflict vehicles' ETAs
