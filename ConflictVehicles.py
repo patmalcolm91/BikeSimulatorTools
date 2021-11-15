@@ -11,6 +11,7 @@ import traci.constants as tc
 import numpy as np
 import xml.etree.ElementTree as ET
 from . import RouteTools
+import warnings
 
 
 class ConflictVehicle:
@@ -43,6 +44,10 @@ class ConflictVehicle:
         self.done = False
         self.release_point = release_point
 
+    @property
+    def vehicle_present_in_simulation(self):
+        return self.name in traci.vehicle.getIDList()
+
     def on_create(self):
         """
         Placeholder callback that is called as soon as the vehicle is added to the Sumo simulation.
@@ -57,7 +62,13 @@ class ConflictVehicle:
         :param ego_speed: speed of ego vehicle (m/s)
         :return: None
         """
+        if self.deployed and not self.done and not self.vehicle_present_in_simulation:
+            warnings.warn("Conflict Vehicle " + self.name + " was removed from simulation.")
+            return None
         # Calculate ego and conflict vehicles' ETAs
+        if ego_speed < 0 or ego_speed > 20:
+            warnings.warn("Implausible ego speed " + str(ego_speed) + " passed to ConflictVehicle.check(). Ignoring!")
+            return
         if ego_speed == 0:
             ego_speed = 0.0001  # avoid division by zero
         ego_dist = np.linalg.norm(np.array(self.ego_target) - np.array(ego_pos))
